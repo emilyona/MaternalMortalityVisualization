@@ -1,0 +1,143 @@
+<html>
+<head>
+  <title>Project 2</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
+
+  <style>
+
+
+
+  </style>
+
+
+</head>
+<body>
+  <p> Problem 1: </p>
+
+  <svg id="graph" height="500" width="800" >
+  </svg>
+
+  <script>
+
+
+
+  const requestData = async () => {
+
+    const unicefData = await d3.csv("unicef_data.csv");
+    const countryData = await d3.json("countries-110m.json");
+    console.log(unicefData);
+    console.log(countryData);
+
+    var unicefCountries = []
+    for (i = 0; i < unicefData.length; i++) {
+      let country = unicefData[i]["GeographicArea"]
+      var n = country.indexOf(":")
+      country = country.slice(n+2)
+      unicefData[i]["GeographicArea"] = country
+
+      if(unicefCountries.includes(country) === false){
+        unicefCountries.push(country)
+      }
+        }
+
+    console.log(unicefCountries);
+    console.log(unicefData)
+
+    // console.log(countryData.objects.countries.geometries.length)
+    // for (i = 0; i < countryData.objects.countries.geometries.length; i++) {
+    //   country = countryData.objects.countries.geometries[i].properties.name
+    // //  console.log(country)
+    //   if(unicefCountries.includes(country)) {
+    //     console.log(country)
+    //   }
+    // //  console.log(countryData.objects.countries.geometries[i].properties.name)
+    //     }
+
+//ADD data to topojson file:
+    data = unicefData.filter( (d) => {return d['TimePeriod'] === "2017";}  );
+    console.log("data")
+    console.log(data)
+    for (i = 0; i < countryData.objects.countries.geometries.length; i++) {
+      country = countryData.objects.countries.geometries[i].properties.name
+      if (unicefCountries.includes(country)){
+        filtered_data = data.filter( (d) => {return d['GeographicArea'] == country;}  )
+        var TimePeriod = filtered_data["TimePeriod"]
+        var maternal_mortality_ratio = filtered_data[0]["maternal_mortality_ratio"]
+        countryData.objects.countries.geometries[i].properties.maternal_mortality_ratio = maternal_mortality_ratio
+      }
+
+    }
+
+
+    console.log(countryData)
+
+//Build bar chart:
+
+    const svg = d3.select("#graph");
+    const width = svg.attr("width");
+    const height = svg.attr("height");
+
+    const margin = {top: 10, right: 10, bottom: 50, left: 50};
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+
+    let annotations = svg.append("g").attr("id","annotations");
+    let chartArea = svg.append("g").attr("id","points")
+                        .attr("transform",`translate(${margin.left},${margin.top})`);
+
+    let maxRatio = d3.max(data, (d) => { return d["maternal_mortality_ratio"]; });
+    const ratioScale = d3.scaleLinear()
+                          .domain([0, maxRatio])
+                          .range([chartHeight, 0]);
+
+    var countries =  d3.map(data, d => d.GeographicArea)
+    const countryScale = d3.scaleBand().domain(countries)
+                                      .range([0, chartWidth])
+                                      .padding(0.05);
+
+    let leftAxis = d3.axisLeft(ratioScale);
+                          //.tickFormat(d3.format('.0%'));
+    let leftGridlines = d3.axisLeft(ratioScale)
+                          .tickSize(-chartWidth-10)
+                          .tickFormat("");
+
+    annotations.append("g")
+                .attr("class", "y axis")
+                .attr("transform",`translate(${margin.left-10},${margin.top})`)
+                .call(leftAxis)
+    annotations.append("g")
+               .attr("class", "y gridlines")
+               .attr("transform",`translate(${margin.left-10},${margin.top})`)
+               .call(leftGridlines);
+
+    let bottomAxis = d3.axisBottom(countryScale);
+    annotations.append("g")
+              .attr("class", "x axis")
+              .attr("transform",`translate(${margin.left},${chartHeight+margin.top+10})`)
+              .call(bottomAxis);
+
+    chartArea.selectAll('rect.bar').data( data )
+            .join('rect').attr('class','bar')
+            .attr("fill", "steelblue")
+            .attr("x", d => countryScale(d.GeographicArea))
+            .attr("y", d => ratioScale(d.maternal_mortality_ratio))
+            .attr("height", d => ratioScale(0) - ratioScale(d.maternal_mortality_ratio))
+            .attr("width", countryScale.bandwidth());
+
+
+
+  };
+  requestData();
+
+  </script>
+
+
+
+
+
+
+
+
+</body>
+</html>
