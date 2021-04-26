@@ -13,7 +13,7 @@
 
 </head>
 <body>
-  <p> Problem 1: </p>
+  <p> Title 123</p>
 
   <svg id="graph" height="500" width="800" >
   </svg>
@@ -86,7 +86,17 @@
     let chartArea = svg.append("g").attr("id","points")
                         .attr("transform",`translate(${margin.left},${margin.top})`);
 
+    //maxRatio:
     let maxRatio = d3.max(data, (d) => { return d["maternal_mortality_ratio"]; });
+    let ratios = []
+    for (i = 0; i < data.length; i++) {
+      ratio = parseInt(data[i]["maternal_mortality_ratio"])
+
+      ratios.push(ratio)
+    }
+    console.log(ratios)
+
+
     const ratioScale = d3.scaleLinear()
                           .domain([0, maxRatio])
                           .range([chartHeight, 0]);
