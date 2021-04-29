@@ -7,7 +7,11 @@
 
   <style>
 
-
+  .outlineCount{
+      stroke: white;
+      stroke-width: .5px;
+      fill:none;
+    }
 
   </style>
 
@@ -18,7 +22,7 @@
 
   <svg id="graph" height="500" width="800" >
   </svg>
-
+  <svg id="choropleth" height="620" width="800" style="margin:20px" />
   <script>
 
 
@@ -59,13 +63,17 @@
     data = unicefData.filter( (d) => {return d['TimePeriod'] === "2017";}  );
     console.log("data")
     console.log(data)
+    var mortvals = {}
     for (i = 0; i < countryData.objects.countries.geometries.length; i++) {
       country = countryData.objects.countries.geometries[i].properties.name
       if (unicefCountries.includes(country)){
+
         filtered_data = data.filter( (d) => {return d['GeographicArea'] == country;}  )
         var TimePeriod = filtered_data["TimePeriod"]
         var maternal_mortality_ratio = filtered_data[0]["maternal_mortality_ratio"]
         countryData.objects.countries.geometries[i].properties.maternal_mortality_ratio = maternal_mortality_ratio
+        mortvals[country] = maternal_mortality_ratio
+
       }
 
     }
@@ -103,6 +111,7 @@
                           .range([chartHeight, 0]);
 
     var countries =  d3.map(data, d => d.GeographicArea)
+
     const countryScale = d3.scaleBand().domain(countries)
                                       .range([0, chartWidth])
                                       .padding(0.05);
@@ -135,6 +144,57 @@
             .attr("y", d => ratioScale(d.maternal_mortality_ratio))
             .attr("height", d => ratioScale(0) - ratioScale(d.maternal_mortality_ratio))
             .attr("width", countryScale.bandwidth());
+
+    //make the map
+
+      const svgc = d3.select("#choropleth");
+      const widthm = svgc.attr("width");
+      const heightm = svgc.attr("height");
+      const marginm = { top: 20, right: 20, bottom: 20, left:20};
+      const mapWidth = widthm - marginm.left - marginm.right;
+      const mapHeight = heightm - marginm.top - marginm.bottom;
+      const map = svgc.append("g")
+                      .attr("transform","translate("+marginm.left+","+marginm.top+")");
+      countries = topojson.feature(countryData, countryData.objects.countries);
+      countryMesh = topojson.mesh(countryData, countryData.objects.countries);
+
+
+
+
+
+
+      var projection = d3.geoMercator().fitSize([mapWidth, mapHeight],countries);
+
+      var path = d3.geoPath().projection(projection);
+
+
+
+
+      console.log(mortvals["Afghanistan"])
+
+      const colorScale = d3.scaleQuantile()
+                              .domain(Object.values(mortvals))
+                              .range(["#f9f4f4","#eda4a4","#da6a6a","#9a2809"]);
+      console.log()
+
+      map.selectAll("path.countries").data(countries.features)
+                                          .join("path")
+                                          .attr("class", "country")
+                                          .attr("note", d=>d.id)
+                                          .attr("d", path)
+                                          .style("fill", d=>colorScale(mortvals[d.properties.name]))
+
+      map.append("path").datum(countryMesh)
+            .attr("class", "outlineCount")
+            .attr("d", path);
+
+
+
+
+
+
+
+
 
 
 
