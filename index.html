@@ -20,9 +20,11 @@
 <body>
   <p> Title 123</p>
 
+
+  <svg id="choropleth" height="620" width="800" style="margin:20px" />
   <svg id="graph" height="500" width="800" >
   </svg>
-  <svg id="choropleth" height="620" width="800" style="margin:20px" />
+  <div id="button-bar"></div>
   <script>
 
 
@@ -31,8 +33,10 @@
 
     const unicefData = await d3.csv("unicef_data.csv");
     const countryData = await d3.json("countries-110m.json");
+    const incomeData = await d3.csv("incomegroups.csv")
     console.log(unicefData);
     console.log(countryData);
+    console.log(incomeData)
 
     var unicefCountries = []
     for (i = 0; i < unicefData.length; i++) {
@@ -46,6 +50,20 @@
       }
         }
 
+    console.log(unicefCountries);
+    console.log(unicefData)
+
+    // Add income level to unicef countries data
+    for (i = 0; i < unicefData.length; i++) {
+          let country = unicefData[i]["GeographicArea"]
+          row = incomeData.filter( (d) => {return d['Economy'] == country;}  )
+          row = row[0]
+          if (row != undefined){
+            income = row['Income group']
+            region = row['Region']
+            unicefData[i]["IncomeGroup"] = income
+            unicefData[i]["Region"] = region}
+            }
     console.log(unicefCountries);
     console.log(unicefData)
 
@@ -96,21 +114,55 @@
                         .attr("transform",`translate(${margin.left},${margin.top})`);
 
     //maxRatio:
-    let maxRatio = d3.max(data, (d) => { return d["maternal_mortality_ratio"]; });
-    let ratios = []
-    for (i = 0; i < data.length; i++) {
-      ratio = parseInt(data[i]["maternal_mortality_ratio"])
+    // let maxRatio = d3.max(data, (d) => { return d["maternal_mortality_ratio"]; });
+    // let ratios = []
+    // for (i = 0; i < data.length; i++) {
+    //   ratio = parseInt(data[i]["maternal_mortality_ratio"])
+    //
+    //   ratios.push(ratio)
+    // }
+    // console.log(ratios)
 
-      ratios.push(ratio)
+    // Only show top 10 bars:
+    function getTop10(data){
+      let top_ratios = []
+      let top_countries = []
+      for(i = 0; i < 10; i ++){
+        let maxiRatio = 0;
+        let topiCountry = "na"
+        for (j = 0; j < data.length; j ++){
+          ratio = parseInt(data[j]["maternal_mortality_ratio"])
+          country = data[j]["GeographicArea"]
+          if ((ratio > maxiRatio) & (top_countries.includes(country) == false)) {maxiRatio = ratio; topiCountry = country;}
+        }
+        top_ratios.push(maxiRatio)
+        top_countries.push(topiCountry)
+      }
+      return({"topratios": top_ratios, "topcountries": top_countries})
+
+
+
     }
-    console.log(ratios)
+
+    function getTop10Data(data){
+      let top10data = getTop10(data)
+      let countries = top10data["topcountries"]
+      top10data = data.filter((d) => {return countries.includes(d['GeographicArea'])})
+      return(top10data)
+
+    }
+
+
+    let maxRatio = getTop10(data)["topratios"][0]
+    var countries = getTop10(data)["topcountries"]
+    var top10data = getTop10Data(data);
 
 
     const ratioScale = d3.scaleLinear()
                           .domain([0, maxRatio])
                           .range([chartHeight, 0]);
 
-    var countries =  d3.map(data, d => d.GeographicArea)
+  //  var countries =  d3.map(data, d => d.GeographicArea)
 
     const countryScale = d3.scaleBand().domain(countries)
                                       .range([0, chartWidth])
@@ -131,19 +183,62 @@
                .attr("transform",`translate(${margin.left-10},${margin.top})`)
                .call(leftGridlines);
 
-    let bottomAxis = d3.axisBottom(countryScale);
-    annotations.append("g")
-              .attr("class", "x axis")
-              .attr("transform",`translate(${margin.left},${chartHeight+margin.top+10})`)
-              .call(bottomAxis);
+    // let bottomAxis = d3.axisBottom(countryScale);
+    // annotations.append("g")
+    //           .attr("class", "x axis")
+    //           .attr("transform",`translate(${margin.left},${chartHeight+margin.top+10})`)
+    //           .call(bottomAxis);
+    let bottomAxis = d3.axisBottom()
+    let bottomAxisG = annotations.append("g")
+                                  .attr("class", "x axis")
+                                  .attr("transform", `translate(${margin.left},${chartHeight+margin.top+10})`)
 
-    chartArea.selectAll('rect.bar').data( data )
-            .join('rect').attr('class','bar')
-            .attr("fill", "steelblue")
-            .attr("x", d => countryScale(d.GeographicArea))
-            .attr("y", d => ratioScale(d.maternal_mortality_ratio))
-            .attr("height", d => ratioScale(0) - ratioScale(d.maternal_mortality_ratio))
-            .attr("width", countryScale.bandwidth());
+    // chartArea.selectAll('rect.bar').data( data )
+    //         .join('rect').attr('class','bar')
+    //         .attr("fill", "steelblue")
+    //         .attr("x", d => countryScale(d.GeographicArea))
+    //         .attr("y", d => ratioScale(d.maternal_mortality_ratio))
+    //         .attr("height", d => ratioScale(0) - ratioScale(d.maternal_mortality_ratio))
+    //         .attr("width", countryScale.bandwidth());
+
+    const allIncomes = ["Low income", "Lower middle income", "Upper middle income", "High income", "All Countries"]
+    allIncomes.forEach(d => {
+      d3.select("div#button-bar")
+        .append("button")
+        .text(d)
+        .on("click", function(){
+          //Update
+          updateBars(d);
+        })
+    })
+    function updateBars(incomeKey) {
+      if (incomeKey == "All Countries"){
+        var updatedData = data
+      }
+      else {
+        var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
+      }
+      top10Data = getTop10Data(updatedData)
+
+      var countries = getTop10(updatedData)["topcountries"]
+      const countryScale = d3.scaleBand().domain(countries)
+                                        .range([0, chartWidth])
+                                        .padding(0.05);
+      bottomAxis.scale(countryScale)
+      bottomAxisG.call(bottomAxis);
+
+      chartArea.selectAll('rect.bar').data( top10Data )
+              .join('rect').attr('class','bar')
+              .attr("fill", "steelblue")
+              .attr("x", d => countryScale(d.GeographicArea))
+              .attr("y", d => ratioScale(d.maternal_mortality_ratio))
+              .attr("height", d => ratioScale(0) - ratioScale(d.maternal_mortality_ratio))
+              .attr("width", countryScale.bandwidth())
+              .attr("country", d => d["GeographicArea"]);
+
+  };
+
+  updateBars("All Countries");
 
     //make the map
 
