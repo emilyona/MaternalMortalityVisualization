@@ -66,6 +66,7 @@
 
       if(unicefCountries.includes(country) === false){
         unicefCountries.push(country)
+
       }
         }
 
@@ -85,7 +86,14 @@
             region = row['Region']
             unicefData[i]["IncomeGroup"] = income
             unicefData[i]["Region"] = region}
-            }
+      }
+      // for (i=0; i<unicefData.length; i++){
+      //   if(income =="Low income"){low[country] = unicefData[i]["maternal_mortality_ratio"]}
+      //   if(income =="Lower middle income"){lowmid[country] = unicefData[i]["maternal_mortality_ratio"]}
+      //   if(income =="Upper middle income"){upmid[country] = unicefData[i]["maternal_mortality_ratio"]}
+      //   if(income =="High income"){high[country] = unicefData[i]["maternal_mortality_ratio"]}
+      // }
+
 
     console.log(unicefCountries);
     console.log(unicefData)
