@@ -71,11 +71,6 @@
             region = row['Region']
             unicefData[i]["IncomeGroup"] = income
             unicefData[i]["Region"] = region}
-            //for some reason I can't access the maternal_mortality_ratio below. I need the numbers! HELP
-            if(income =="Low income"){low[country] = unicefData[i]["maternal_mortality_ratio"]}
-            if(income =="Lower middle income"){lowmid[country] = unicefData[i]["maternal_mortality_ratio"]}
-            if(income =="Upper middle income"){upmid[country] = unicefData[i]["maternal_mortality_ratio"]}
-            if(income =="High income"){high[country] = unicefData[i]["maternal_mortality_ratio"]}
             }
 
     console.log(unicefCountries);
@@ -115,6 +110,7 @@
     console.log(lowmid)
 
     console.log(countryData)
+    var mortvalsorig = mortvals
 
 //Build bar chart:
 
@@ -323,36 +319,41 @@
 
 
         //HELP once i have the first help fixed, I can come back and finish this
-      //   function updatemap(incomeKey) {
-      //     if (incomeKey == "All Countries"){
-      //       var updatedData = data
-      //     }
-      //     else {
-      //       var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
-      //     }
-      //
-      //
-      //     var countriesnew = updatedData
-      //     mortvalsnew = countriesnew.features.properties.maternal_mortality_ratio
-      //     const colorScalenew = d3.scaleQuantile()
-      //                             .domain(Object.values(mortvals))
-      //                             .range(["#f9f4f4","#eda4a4","#da6a6a","#9a2809"]);
-      //     console.log(countries)
-      //
-      //     bottomAxis.scale(countryScale)
-      //     bottomAxisG.call(bottomAxis);
-      // 
-      //     map.selectAll("path.countries").data(countries.features)
-      //                                         .join("path")
-      //                                         .attr("class", "country")
-      //                                         .attr("note", d=>d.id)
-      //                                         .attr("d", path)
-      //                                         .on("click", clicked)
-      //                                         .style("fill", d=>colorScale(mortvals[d.properties.name]))
-      //
-      // };
-      //
-      // updateBars("All Countries");
+        function updatemap(incomeKey) {
+          if (incomeKey == "All Countries"){
+            var updatedData = data
+            mortvals = mortvalsorig
+          }
+          else {
+            var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
+            console.log("hi")
+            console.log(updatedData)
+            let mortvals = d3.map(updatedData, d => d.maternal_mortality_ratio)
+            console.log(mortvals)
+
+          }
+
+
+          var countriesnew = updatedData
+          const colorScalenew = d3.scaleQuantile()
+                                  .domain(Object.values(mortvals))
+                                  .range(["#f9f4f4","#eda4a4","#da6a6a","#9a2809"]);
+          console.log(countries)
+
+          bottomAxis.scale(countryScale)
+          bottomAxisG.call(bottomAxis);
+
+          map.selectAll("path.countries").data(countries.features)
+                                              .join("path")
+                                              .attr("class", "country")
+                                              .attr("note", d=>d.id)
+                                              .attr("d", path)
+                                              .on("click", clicked)
+                                              .style("fill", d=>colorScale(mortvals[d.properties.name]))
+
+      };
+
+      updateBars("All Countries");
 
 
 
