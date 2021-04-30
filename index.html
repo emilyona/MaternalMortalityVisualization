@@ -13,6 +13,10 @@
       fill:none;
     }
 
+    .active {
+        fill: #46b6b6;
+    }
+
   </style>
 
 
@@ -22,6 +26,7 @@
 
 
   <svg id="choropleth" height="620" width="800" style="margin:20px" />
+  <div id="button"></div>
   <svg id="graph" height="500" width="800" >
   </svg>
   <div id="button-bar"></div>
@@ -52,7 +57,10 @@
 
     console.log(unicefCountries);
     console.log(unicefData)
-
+    var low = {}
+    var lowmid = {}
+    var upmid = {}
+    var high = {}
     // Add income level to unicef countries data
     for (i = 0; i < unicefData.length; i++) {
           let country = unicefData[i]["GeographicArea"]
@@ -63,9 +71,16 @@
             region = row['Region']
             unicefData[i]["IncomeGroup"] = income
             unicefData[i]["Region"] = region}
+            //for some reason I can't access the maternal_mortality_ratio below. I need the numbers! HELP
+            if(income =="Low income"){low[country] = unicefData[i]["maternal_mortality_ratio"]}
+            if(income =="Lower middle income"){lowmid[country] = unicefData[i]["maternal_mortality_ratio"]}
+            if(income =="Upper middle income"){upmid[country] = unicefData[i]["maternal_mortality_ratio"]}
+            if(income =="High income"){high[country] = unicefData[i]["maternal_mortality_ratio"]}
             }
+
     console.log(unicefCountries);
     console.log(unicefData)
+    console.log(low)
 
     // console.log(countryData.objects.countries.geometries.length)
     // for (i = 0; i < countryData.objects.countries.geometries.length; i++) {
@@ -90,12 +105,14 @@
         var TimePeriod = filtered_data["TimePeriod"]
         var maternal_mortality_ratio = filtered_data[0]["maternal_mortality_ratio"]
         countryData.objects.countries.geometries[i].properties.maternal_mortality_ratio = maternal_mortality_ratio
+
         mortvals[country] = maternal_mortality_ratio
 
       }
 
-    }
 
+    }
+    console.log(lowmid)
 
     console.log(countryData)
 
@@ -255,6 +272,16 @@
 
 
 
+      allIncomes.forEach(d => {
+        d3.select("div#button")
+          .append("button")
+          .text(d)
+          .on("click", function(){
+            //Update
+            updatemap(d);
+          })
+      })
+
 
 
 
@@ -272,16 +299,60 @@
                               .range(["#f9f4f4","#eda4a4","#da6a6a","#9a2809"]);
       console.log()
 
-      map.selectAll("path.countries").data(countries.features)
-                                          .join("path")
-                                          .attr("class", "country")
-                                          .attr("note", d=>d.id)
-                                          .attr("d", path)
-                                          .style("fill", d=>colorScale(mortvals[d.properties.name]))
+      d3.json("https://unpkg.com/world-atlas@1/world/110m.json")
+        .then(data => {
+          map.selectAll("path.countries").data(countries.features)
+                                              .join("path")
+                                              .attr("class", "country")
+                                              .attr("note", d=>d.id)
+                                              .attr("d", path)
+                                              .on("click", clicked)
+                                              .style("fill", d=>colorScale(mortvals[d.properties.name]))
+        map.append("path").datum(countryMesh)
+                  .attr("class", "outlineCount")
+                  .attr("d", path);
+        });
 
-      map.append("path").datum(countryMesh)
-            .attr("class", "outlineCount")
-            .attr("d", path);
+
+        //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
+        function clicked(d) {
+          map.selectAll("path")
+            .style("fill", "#37c3d6")
+
+        }
+
+
+        //HELP once i have the first help fixed, I can come back and finish this
+      //   function updatemap(incomeKey) {
+      //     if (incomeKey == "All Countries"){
+      //       var updatedData = data
+      //     }
+      //     else {
+      //       var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
+      //     }
+      //
+      //
+      //     var countriesnew = updatedData
+      //     mortvalsnew = countriesnew.features.properties.maternal_mortality_ratio
+      //     const colorScalenew = d3.scaleQuantile()
+      //                             .domain(Object.values(mortvals))
+      //                             .range(["#f9f4f4","#eda4a4","#da6a6a","#9a2809"]);
+      //     console.log(countries)
+      //
+      //     bottomAxis.scale(countryScale)
+      //     bottomAxisG.call(bottomAxis);
+      // 
+      //     map.selectAll("path.countries").data(countries.features)
+      //                                         .join("path")
+      //                                         .attr("class", "country")
+      //                                         .attr("note", d=>d.id)
+      //                                         .attr("d", path)
+      //                                         .on("click", clicked)
+      //                                         .style("fill", d=>colorScale(mortvals[d.properties.name]))
+      //
+      // };
+      //
+      // updateBars("All Countries");
 
 
 
