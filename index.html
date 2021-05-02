@@ -344,12 +344,45 @@
 
 
 
+<<<<<<< HEAD
       //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
       function clicked(d) {
           map.selectAll(".country")
+=======
+        //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
+        function clicked(d) {
+
+
+          //updateMap("All Countries")
+
+          d3.select(this)
+            .classed("clicked", true)
+>>>>>>> de54c425ae62be2b26d34831ebd192ee5f1f607f
             .style("fill", "#37c3d6")
 
+
         }
+
+        // .on("click", function(){
+        //   console.log("dude")
+        //
+        //   clicked()
+        //           console.log("whatdup")
+        //         })
+        // .on("click", function() {
+        //         d3.select(this)
+        //           .classed("clicked", true)
+        //           .attr("fill", #d24c2e);
+        // })
+      // function clicked(d) {
+      //   console.log("hi")
+      //
+      //   // d3.select(this)
+      //   //   .style("fill", "#37c3d6")
+      //   map.selectAll("path")
+      //     .classed("active")
+      //
+      // }
 
         //Tool tip:
         let tooltipWidth = 170;
@@ -439,13 +472,17 @@
 
         function mouseLeavesPlot() {
 
-         // Hide when you leave a state
          tooltip.style("visibility","hidden");
 
+<<<<<<< HEAD
          let country = d3.select(this);
          country.attr("stroke","none")
               .attr("stroke-width", 0);
          //momesh.attr("d", "");
+=======
+         let state = d3.select(this);
+         momesh.attr("d", "");
+>>>>>>> de54c425ae62be2b26d34831ebd192ee5f1f607f
 
           }
           console.log(countries)
@@ -476,6 +513,7 @@
                                               .attr("class", "country")
                                               .attr("note", d=>d.id)
                                               .attr("d", path)
+<<<<<<< HEAD
                                               .on("click", clicked)
                                               .style("fill", d=>colorScalenew(mortvals_up[d.properties.name]))
         map.append("path").datum(countryMesh)
@@ -484,6 +522,10 @@
 
         d3.selectAll(".country").on("mouseenter", mouseEnter);
         d3.selectAll(".country").on("mouseout",  mouseLeavesPlot);
+=======
+                                              .on("click", clicked(d))
+                                              .style("fill", d=>colorScalenew(mortvals[d.properties.name]))
+>>>>>>> de54c425ae62be2b26d34831ebd192ee5f1f607f
 
       };
 
