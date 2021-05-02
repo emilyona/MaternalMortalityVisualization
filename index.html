@@ -319,9 +319,7 @@
                   .attr("d", path);
 
 
-        let tooltip = map.append("g")
-                         .attr("class","tooltip")
-                         .attr("visibility","hidden");
+        
         //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
         function clicked(d) {
           map.selectAll(".country")
