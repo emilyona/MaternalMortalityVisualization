@@ -36,6 +36,10 @@
         fill: #46b6b6;
     }
 
+    svg {
+      display: block;
+    }
+
   </style>
 
 
@@ -43,11 +47,12 @@
 <body>
   <div class = "projtitle"> <text class = "projtitle"> Visualizing Maternal Mortality </text> </div>
 
-
+  <div id="button-bar"></div>
   <svg id="choropleth" height="620" width="800" style="margin:20px" />
+  <svg id="colorLegend" height="100" width="600" style="background: #fff; margin-top:30px" ></svg>
   <svg id="graph" height="500" width="800" >
   </svg>
-  <div id="button-bar"></div>
+
   <script>
 
 
@@ -56,10 +61,11 @@
 
     const unicefData = await d3.csv("unicef_final.csv");
     const countryData = await d3.json("countries-110m.json");
-    const incomeData = await d3.csv("incomegroups.csv")
-    console.log(unicefData);
-    console.log(countryData);
-    console.log(incomeData)
+    const incomeData = await d3.csv("incomegroups_final.csv");
+    let incomeKey = "All Countries"
+
+
+
 
     var unicefCountries = []
     for (i = 0; i < unicefData.length; i++) {
@@ -74,8 +80,7 @@
       }
         }
 
-    console.log(unicefCountries);
-    console.log(unicefData)
+
     var low = {}
     var lowmid = {}
     var upmid = {}
@@ -100,8 +105,7 @@
 
 //ADD data to topojson file:
     data = unicefData.filter( (d) => {return d['TimePeriod'] === "2017";}  );
-    console.log("data")
-    console.log(data)
+
     var mortvals = {}
     for (i = 0; i < countryData.objects.countries.geometries.length; i++) {
       country = countryData.objects.countries.geometries[i].properties.name
@@ -124,6 +128,11 @@
     var lowmid = {}
     var upmid = {}
     var high = {}
+    var lowCountry = []
+    var lowmidCountry = []
+    var upmidCountry = []
+    var highCountry = []
+    var allCountry = []
     for (i = 0; i < data.length; i++) {
       country = data[i]["GeographicArea"]
       ratio = data[i]["maternal_mortality_ratio"]
@@ -131,17 +140,28 @@
 
       if(income =="Low income"){
         low[country] = ratio
-        console.log(ratio)}
-        if(income =="Lower middle income"){lowmid[country] = ratio}
-        if(income =="Upper middle income"){upmid[country] = ratio}
-        if(income =="High income"){high[country] = ratio}
+        lowCountry.push(country)
+        allCountry.push(country)}
+        if(income =="Lower middle income"){
+          lowmid[country] = ratio
+          lowmidCountry.push(country)
+          allCountry.push(country)}
+        if(income =="Upper middle income"){
+          upmid[country] = ratio
+          upmidCountry.push(country)
+          allCountry.push(country)}
+        if(income =="High income"){
+          high[country] = ratio
+          highCountry.push(country)
+          allCountry.push(country)}
   }
 
 
 
 
 
-    console.log(countryData)
+
+
     var mortvalsorig = mortvals
 
 //Build bar chart:
@@ -249,7 +269,7 @@
           updateMap(d);
         })
     })
-    function updateBars(incomeKey) {
+    function updateBars() {
       if (incomeKey == "All Countries"){
         var updatedData = data
       }
@@ -295,6 +315,8 @@
 
 
 
+
+
       var projection =  d3.geoPatterson()
                           .fitSize([mapWidth, mapHeight],countries);
 
@@ -305,6 +327,8 @@
                               .domain(Object.values(mortvals))
                               .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
 
+      drawLegend(d3.select("#colorLegend"), colorScale);
+
 
 
       map.selectAll("path.countries").data(countries.features)
@@ -314,21 +338,21 @@
                                       .attr("d", path)
                                       .on("click", clicked)
                                       .style("fill", d=>colorScale(mortvals[d.properties.name]))
-        map.append("path").datum(countryMesh)
-                  .attr("class", "outlineCount")
-                  .attr("d", path);
+      map.append("path").datum(countryMesh)
+                        .attr("class", "outlineCount")
+                        .attr("d", path);
 
 
 
-        //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
-        function clicked(d) {
+      //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
+      function clicked(d) {
           map.selectAll(".country")
             .style("fill", "#37c3d6")
 
         }
 
         //Tool tip:
-        let tooltipWidth = 120;
+        let tooltipWidth = 170;
         let tooltipHeight = 40;
         let tooltip = map.append("g")
                  .attr("class","tooltip")
@@ -362,7 +386,6 @@
       d3.selectAll(".country").on("mouseout",  mouseLeavesPlot);
 
       let idToCountry = {}
-
       for (i = 0; i < countries.features.length; i++) {
         row = countries.features[i]
         id = row.id
@@ -371,25 +394,34 @@
 
 
       }
-      console.log("COUNTRY")
-      console.log(data)
+
 
 
         function mouseEnter() {
-          tooltip.style("visibility","visible")
 
           let country = d3.select(this);
           let id = country.datum().id;
           let countryname = idToCountry[ id ]
-          console.log(countryname)
-
-
           let countryInfo = data.filter( (d) => {return d['GeographicArea'] == countryname;}  )
-          console.log(data)
+
+          var liveCountries = allCountry
+          if(incomeKey == "Low income") {liveCountries = lowCountry}
+          if(incomeKey == "Lower middle income"){liveCountries = lowmidCountry}
+          if(incomeKey == "Upper middle income"){liveCountries = upmidCountry}
+          if(incomeKey == "High income"){liveCountries = highCountry}
 
 
-          var mo = topojson.mesh(countryData, countryData.objects.countries, function(a, b) { return a.id === id || b.id === id; });
-          momesh.datum(mo).attr("d", path);
+          console.log(liveCountries)
+          if(liveCountries.includes(countryname) || incomeKey == "All Countries"){
+            tooltip.style("visibility","visible")
+          }
+
+
+          country.attr("stroke","black")
+               .attr("stroke-width", 3);
+          // var mo = topojson.mesh(countryData, countryData.objects.countries, function(a, b) { return a.id === id || b.id === id; });
+          // console.log(mo)
+          //momesh.datum(mo).attr("d", path);
 
           txt.text(idToCountry[ id ]);
           txt2.text(countryInfo[0]["maternal_mortality_ratio"]);
@@ -400,6 +432,8 @@
           let yPos = bounds[1][1];
           tooltip.attr("transform",`translate(${xPos},${yPos})`);
 
+          tooltip.raise()
+
 
         }
 
@@ -408,36 +442,32 @@
          // Hide when you leave a state
          tooltip.style("visibility","hidden");
 
-         let state = d3.select(this);
-
-         // Reset old style mouseover stroke
-         // state.attr("stroke","none")
-         //      .attr("stroke-width", 0);
-         // }
-
-         // Here we are hiding the mouseover mesh we added at the end of the lecture
-         momesh.attr("d", "");
+         let country = d3.select(this);
+         country.attr("stroke","none")
+              .attr("stroke-width", 0);
+         //momesh.attr("d", "");
 
           }
-
+          console.log(countries)
 
 
         function updateMap(incomeKey) {
           if (incomeKey == "All Countries"){
             var updatedData = data
-            mortvals = mortvals
+            mortvals_up = mortvals
           }
           else {
             var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
-            if(incomeKey == "Low income") {mortvals = low}
-            if(incomeKey == "Lower middle income"){mortvals = lowmid}
-            if(incomeKey == "Upper middle income"){mortvals = upmid}
-            if(incomeKey == "High income"){mortvals = high}
+            if(incomeKey == "Low income") {mortvals_up = low}
+            if(incomeKey == "Lower middle income"){mortvals_up = lowmid}
+            if(incomeKey == "Upper middle income"){mortvals_up = upmid}
+            if(incomeKey == "High income"){mortvals_up = high}
 
           }
+          console.log(countries)
 
           const colorScalenew = d3.scaleQuantile()
-                              .domain(Object.values(mortvals))
+                              .domain(Object.values(mortvals_up))
                               .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
 
 
@@ -447,11 +477,64 @@
                                               .attr("note", d=>d.id)
                                               .attr("d", path)
                                               .on("click", clicked)
-                                              .style("fill", d=>colorScalenew(mortvals[d.properties.name]))
+                                              .style("fill", d=>colorScalenew(mortvals_up[d.properties.name]))
+        map.append("path").datum(countryMesh)
+                          .attr("class", "outlineCount")
+                          .attr("d", path);
+
+        d3.selectAll(".country").on("mouseenter", mouseEnter);
+        d3.selectAll(".country").on("mouseout",  mouseLeavesPlot);
 
       };
 
+
+
       updateBars("All Countries");
+
+
+
+
+
+        // Function needs a d3 selected SVG canvas where it will draw the legend and a source color scale
+        function drawLegend(legend, legendColorScale) {
+
+          // Bonus code here to draw an adaptive gradient legend so we can see different color scales for choropleth maps
+          //  Credit Prof. Rz if you are basing a legend on this structure, and note SERIOUS PERFORMANCE CONSIDERATIONS
+
+          //const legend = d3.select("#colorLegend");
+          const legendWidth = legend.attr("width");
+          const legendHeight = legend.attr("height");
+          const legendMinMax = d3.extent(legendColorScale.domain()); // way to recover the minMax from most kinds of scales
+          const barHeight = 60;
+          const stepSize = 4; // warning, not using a canvas element so lots of rect tags will be created for low stepSize, causing issues with performance
+          // Extend the minmax by 1 in either direction to expose more features
+          const pixelScale = d3.scaleLinear().domain([0,legendWidth-40]).range([legendMinMax[0]-1,legendMinMax[1]+1]); // In this case the "data" are pixels, and we get numbers to use in colorScale
+          const barScale = d3.scaleLinear().domain([legendMinMax[0]-1,legendMinMax[1]+1]).range([0,legendWidth-40]);
+          const barAxis = d3.axisBottom(barScale);
+          // Check if we're using a quantile scale - if so, we can do better
+          if (legendColorScale.hasOwnProperty('quantiles')) {
+            // Use the quantile breakpoints plus the min and max of the scale as tick values
+            barAxis.tickValues(legendColorScale.quantiles().concat( legendMinMax ));
+          }
+          legend.append("g")
+            .attr("class", "colorbar axis")
+            .attr("transform","translate("+(20)+","+(barHeight+5)+")")
+            .call(barAxis);
+          // Draw rects of color down the bar
+          let bar = legend.append("g").attr("transform","translate("+(20)+","+(0)+")")
+          for (let i=0; i<legendWidth-40; i=i+stepSize) {
+            bar.append("rect")
+              .attr("x", i)
+              .attr("y", 0)
+              .attr("width", stepSize)
+              .attr("height",barHeight)
+              .style("fill", legendColorScale( pixelScale(i) )); // pixels => countData => color
+          }
+          // Put lines in to mark actual min and max of our data
+          bar.append("line").attr("stroke","white").attr("stroke-width",3).attr("x1", barScale(legendMinMax[0])).attr("x2", barScale(legendMinMax[0])).attr("y1", 0).attr("y1", barHeight+4);
+          bar.append("line").attr("stroke","white").attr("stroke-width",3).attr("x1", barScale(legendMinMax[1])).attr("x2", barScale(legendMinMax[1])).attr("y1", 0).attr("y1", barHeight+4);
+
+        }
 
 
 
