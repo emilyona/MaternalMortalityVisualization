@@ -338,7 +338,9 @@
                   .attr("d", path);
         });
 
-
+        let tooltip = map.append("g")
+                         .attr("class","tooltip")
+                         .attr("visibility","hidden");
         //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
         function clicked(d) {
           map.selectAll(".country")
@@ -367,17 +369,9 @@
 
         function mouseLeavesPlot() {
 
-         // Hide when you leave a state
          tooltip.style("visibility","hidden");
 
          let state = d3.select(this);
-
-         // Reset old style mouseover stroke
-         // state.attr("stroke","none")
-         //      .attr("stroke-width", 0);
-         // }
-
-         // Here we are hiding the mouseover mesh we added at the end of the lecture
          momesh.attr("d", "");
 
           }
