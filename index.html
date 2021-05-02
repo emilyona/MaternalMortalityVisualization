@@ -319,13 +319,40 @@
                   .attr("d", path);
 
 
-        
+
         //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
         function clicked(d) {
-          map.selectAll(".country")
+
+
+          //updateMap("All Countries")
+
+          d3.select(this)
+            .classed("clicked", true)
             .style("fill", "#37c3d6")
 
+
         }
+
+        // .on("click", function(){
+        //   console.log("dude")
+        //
+        //   clicked()
+        //           console.log("whatdup")
+        //         })
+        // .on("click", function() {
+        //         d3.select(this)
+        //           .classed("clicked", true)
+        //           .attr("fill", #d24c2e);
+        // })
+      // function clicked(d) {
+      //   console.log("hi")
+      //
+      //   // d3.select(this)
+      //   //   .style("fill", "#37c3d6")
+      //   map.selectAll("path")
+      //     .classed("active")
+      //
+      // }
 
         //Tool tip:
         let tooltipWidth = 120;
@@ -438,7 +465,7 @@
                                               .attr("class", "country")
                                               .attr("note", d=>d.id)
                                               .attr("d", path)
-                                              .on("click", clicked)
+                                              .on("click", clicked(d))
                                               .style("fill", d=>colorScalenew(mortvals[d.properties.name]))
 
       };
