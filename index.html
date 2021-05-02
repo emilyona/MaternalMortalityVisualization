@@ -54,12 +54,11 @@
 
   const requestData = async () => {
 
-    const unicefData = await d3.csv("unicef_data.csv");
+    const unicefData = await d3.csv("unicef_final.csv");
     const countryData = await d3.json("countries-110m.json");
     const incomeData = await d3.csv("incomegroups.csv")
     console.log(unicefData);
     console.log(countryData);
-    console.log("HEYOOO")
     console.log(incomeData)
 
     var unicefCountries = []
@@ -81,6 +80,7 @@
     var lowmid = {}
     var upmid = {}
     var high = {}
+
     // Add income level to unicef countries data
     for (i = 0; i < unicefData.length; i++) {
           let country = unicefData[i]["GeographicArea"]
@@ -90,29 +90,13 @@
             income = row['Income group']
             region = row['Region']
             unicefData[i]["IncomeGroup"] = income
-            unicefData[i]["Region"] = region}
+            unicefData[i]["Region"] = region
+            }
       }
-      // for (i=0; i<unicefData.length; i++){
-      //   if(income =="Low income"){low[country] = unicefData[i]["maternal_mortality_ratio"]}
-      //   if(income =="Lower middle income"){lowmid[country] = unicefData[i]["maternal_mortality_ratio"]}
-      //   if(income =="Upper middle income"){upmid[country] = unicefData[i]["maternal_mortality_ratio"]}
-      //   if(income =="High income"){high[country] = unicefData[i]["maternal_mortality_ratio"]}
-      // }
 
 
-    console.log(unicefCountries);
-    console.log(unicefData)
-    console.log(low)
 
-    // console.log(countryData.objects.countries.geometries.length)
-    // for (i = 0; i < countryData.objects.countries.geometries.length; i++) {
-    //   country = countryData.objects.countries.geometries[i].properties.name
-    // //  console.log(country)
-    //   if(unicefCountries.includes(country)) {
-    //     console.log(country)
-    //   }
-    // //  console.log(countryData.objects.countries.geometries[i].properties.name)
-    //     }
+
 
 //ADD data to topojson file:
     data = unicefData.filter( (d) => {return d['TimePeriod'] === "2017";}  );
@@ -134,7 +118,28 @@
 
 
     }
-    console.log(lowmid)
+
+
+    var low = {}
+    var lowmid = {}
+    var upmid = {}
+    var high = {}
+    for (i = 0; i < data.length; i++) {
+      country = data[i]["GeographicArea"]
+      ratio = data[i]["maternal_mortality_ratio"]
+      income = data[i]["IncomeGroup"]
+
+      if(income =="Low income"){
+        low[country] = ratio
+        console.log(ratio)}
+        if(income =="Lower middle income"){lowmid[country] = ratio}
+        if(income =="Upper middle income"){upmid[country] = ratio}
+        if(income =="High income"){high[country] = ratio}
+  }
+
+
+
+
 
     console.log(countryData)
     var mortvalsorig = mortvals
@@ -153,15 +158,7 @@
     let chartArea = svg.append("g").attr("id","points")
                         .attr("transform",`translate(${margin.left},${margin.top})`);
 
-    //maxRatio:
-    // let maxRatio = d3.max(data, (d) => { return d["maternal_mortality_ratio"]; });
-    // let ratios = []
-    // for (i = 0; i < data.length; i++) {
-    //   ratio = parseInt(data[i]["maternal_mortality_ratio"])
-    //
-    //   ratios.push(ratio)
-    // }
-    // console.log(ratios)
+
 
     // Only show top 10 bars:
     function getTop10(data){
@@ -202,7 +199,7 @@
                           .domain([0, maxRatio])
                           .range([chartHeight, 0]);
 
-  //  var countries =  d3.map(data, d => d.GeographicArea)
+
 
     const countryScale = d3.scaleBand().domain(countries)
                                       .range([0, chartWidth])
@@ -249,6 +246,7 @@
         .on("click", function(){
           //Update
           updateBars(d);
+          updateMap(d);
         })
     })
     function updateBars(incomeKey) {
@@ -276,6 +274,7 @@
               .attr("width", countryScale.bandwidth())
               .attr("country", d => d["GeographicArea"]);
 
+
   };
 
   updateBars("All Countries");
@@ -295,18 +294,6 @@
 
 
 
-      allIncomes.forEach(d => {
-        d3.select("div#button")
-          .append("button")
-          .text(d)
-          .on("click", function(){
-            //Update
-            updatemap(d);
-          })
-      })
-
-
-
 
       var projection =  d3.geoPatterson()
                           .fitSize([mapWidth, mapHeight],countries);
@@ -314,29 +301,23 @@
       var path = d3.geoPath().projection(projection);
 
 
-
-
-      console.log(mortvals)
-
       const colorScale = d3.scaleQuantile()
                               .domain(Object.values(mortvals))
                               .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
 
-      console.log()
 
-      d3.json("https://unpkg.com/world-atlas@1/world/110m.json")
-        .then(data => {
-          map.selectAll("path.countries").data(countries.features)
-                                              .join("path")
-                                              .attr("class", "country")
-                                              .attr("note", d=>d.id)
-                                              .attr("d", path)
-                                              .on("click", clicked)
-                                              .style("fill", d=>colorScale(mortvals[d.properties.name]))
+
+      map.selectAll("path.countries").data(countries.features)
+                                      .join("path")
+                                      .attr("class", "country")
+                                      .attr("note", d=>d.id)
+                                      .attr("d", path)
+                                      .on("click", clicked)
+                                      .style("fill", d=>colorScale(mortvals[d.properties.name]))
         map.append("path").datum(countryMesh)
                   .attr("class", "outlineCount")
                   .attr("d", path);
-        });
+
 
 
         //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
@@ -346,21 +327,78 @@
 
         }
 
-        let momesh =  map.append("path")
-                     .attr("class","mouseover outline")
-                     .attr("d", "");
+        //Tool tip:
+        let tooltipWidth = 120;
+        let tooltipHeight = 40;
+        let tooltip = map.append("g")
+                 .attr("class","tooltip")
+                 .attr("visibility","hidden");
+        tooltip.append("rect")
+                .attr("fill", "black")
+                .attr("opacity", 0.7)
+                .attr("x", -tooltipWidth / 2.0)
+                .attr("y", 0)
+                .attr("width",tooltipWidth)
+                .attr("height",tooltipHeight)
+        let txt = tooltip.append("text")
+                        .attr("fill", "white")
+                        .attr("text-anchor","middle")
+                        .attr("alignment-baseline","hanging")
+                        .attr("x", 0)
+                        .attr("y", 2);
+        let txt2 = tooltip.append("text")
+                          .attr("fill", "white")
+                          .attr("text-anchor","middle")
+                          .attr("alignment-baseline","hanging")
+                          .attr("x", 0)
+                          .attr("y", 22);
+
+      let momesh =  map.append("path")
+                       .attr("class","mouseover outline")
+                       .attr("d", "");
 
 
-        d3.selectAll(".country").on("mouseenter", mouseEnter);
-        d3.selectAll(".country").on("mouseout",  mouseLeavesPlot);
+      d3.selectAll(".country").on("mouseenter", mouseEnter);
+      d3.selectAll(".country").on("mouseout",  mouseLeavesPlot);
+
+      let idToCountry = {}
+
+      for (i = 0; i < countries.features.length; i++) {
+        row = countries.features[i]
+        id = row.id
+        name = row.properties.name
+        idToCountry[id] = name
+
+
+      }
+      console.log("COUNTRY")
+      console.log(data)
+
 
         function mouseEnter() {
-          console.log("hi")
           tooltip.style("visibility","visible")
 
           let country = d3.select(this);
           let id = country.datum().id;
-          console.log(country.datum())
+          let countryname = idToCountry[ id ]
+          console.log(countryname)
+
+
+          let countryInfo = data.filter( (d) => {return d['GeographicArea'] == countryname;}  )
+          console.log(data)
+
+
+          var mo = topojson.mesh(countryData, countryData.objects.countries, function(a, b) { return a.id === id || b.id === id; });
+          momesh.datum(mo).attr("d", path);
+
+          txt.text(idToCountry[ id ]);
+          txt2.text(countryInfo[0]["maternal_mortality_ratio"]);
+
+          let centroid = path.centroid( country.datum() );
+          let bounds = path.bounds( country.datum() );
+          let xPos = (bounds[0][0]+bounds[1][0])/2.0;
+          let yPos = bounds[1][1];
+          tooltip.attr("transform",`translate(${xPos},${yPos})`);
 
 
         }
@@ -382,30 +420,26 @@
 
           }
 
-        //HELP once i have the first help fixed, I can come back and finish this
-        function updatemap(incomeKey) {
+
+
+        function updateMap(incomeKey) {
           if (incomeKey == "All Countries"){
             var updatedData = data
-            mortvals = mortvalsorig
+            mortvals = mortvals
           }
           else {
             var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
-            console.log("hi")
-            console.log(updatedData)
-            let mortvals = d3.map(updatedData, d => d.maternal_mortality_ratio)
-            console.log(mortvals)
+            if(incomeKey == "Low income") {mortvals = low}
+            if(incomeKey == "Lower middle income"){mortvals = lowmid}
+            if(incomeKey == "Upper middle income"){mortvals = upmid}
+            if(incomeKey == "High income"){mortvals = high}
 
           }
 
-
-          var countriesnew = updatedData
           const colorScalenew = d3.scaleQuantile()
-                                  .domain(Object.values(mortvals))
-                                  .range(["#f9f4f4","#eda4a4","#da6a6a","#9a2809"]);
-          console.log(countries)
+                              .domain(Object.values(mortvals))
+                              .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
 
-          bottomAxis.scale(countryScale)
-          bottomAxisG.call(bottomAxis);
 
           map.selectAll("path.countries").data(countries.features)
                                               .join("path")
@@ -413,7 +447,7 @@
                                               .attr("note", d=>d.id)
                                               .attr("d", path)
                                               .on("click", clicked)
-                                              .style("fill", d=>colorScale(mortvals[d.properties.name]))
+                                              .style("fill", d=>colorScalenew(mortvals[d.properties.name]))
 
       };
 
