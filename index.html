@@ -67,6 +67,8 @@
 <body>
   <div class = "projtitle"> <text class = "projtitle"> Visualizing Maternal Mortality </text> </div>
 
+  <p>Maternal mortality rate is the number of deaths caused (or influenced by) complications due to pregnancy or childbirth out of every 100,000 pregnancies. These deaths are largely preventable. According to the CDC, 60% of deaths in the USA caused by pregnancy or birth complications would be preventable with adequate training and resources. It is estimated that a much larger portion of Maternal mortality are preventable worldwide.</p>
+
   <div id="button-bar"></div>
   <svg id="choropleth" height="620" width="1150" style="margin:20px" />
   <svg id="colorLegend" height="100" width="600" style="background: #fff; margin-top:30px" ></svg>
@@ -357,7 +359,7 @@
 
       const colorScale = d3.scaleQuantile()
                               .domain(Object.values(mortvals))
-                              .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
+                              .range(['#dfdfc1', '#e6b3b3', '#e36066', '#9f0d0e','#4a0101' ]);
 
       drawLegend(d3.select("#colorLegend"), colorScale);
 
@@ -399,13 +401,21 @@
         const format = d3.format(',d');
 
 
-        function clicked(d) {
+        function clicked() {
+          updateMap("All Countries")
 
           d3.select(this)
             .classed("clicked", true)
 
+
+
           textbox.html('');
           country = d3.select(this)
+
+
+          country.attr("stroke","black")
+                .attr("stroke-width", 3);
+
 
 
 
@@ -418,7 +428,7 @@
               let countryName = `Country: ${countryname}`;
               let year = `Year: ${countryInfo[0]['TimePeriod']}`;
               let mmr = `Maternal Mortality Ratio: ${countryInfo[0]['maternal_mortality_ratio']}`;
-              let imr = `Infannt Mortality Rate: ${format(countryInfo[0]['infant_mortality_rate'])}`;
+              let imr = `Infant Mortality Rate: ${format(countryInfo[0]['infant_mortality_rate'])}`;
               let postnatalCare = `% Mothers Postnatal Care: ${d3.format(".0%")(countryInfo[0]['postnatal_care_mothers']/100)}`;
               let ecb = `Early Childbearing: ${countryInfo[0]['early_childbearing']}`;
               let pss = `Proportion Sanitation Services: ${d3.format(".0%")(countryInfo[0]['proportion_sanitation_services']/100)}`;
@@ -434,10 +444,10 @@
                     .attr("x", 0).attr("y", 50);
               textbox.append("text").text(imr)
                     .attr("x", 0).attr("y", 70);
-              textbox.append("text").text(postnatalCare)
-                    .attr("x", 0).attr("y", 90);
-              textbox.append("text").text(ecb)
-                    .attr("x", 0).attr("y", 110);
+              //textbox.append("text").text(postnatalCare)
+                    //.attr("x", 0).attr("y", 90);
+              //textbox.append("text").text(ecb)
+                    //.attr("x", 0).attr("y", 110);
               textbox.append("text").text(pss)
                     .attr("x", 0).attr("y", 130);
               textbox.append("text").text(sba)
@@ -587,9 +597,13 @@
 
           const colorScalenew = d3.scaleQuantile()
                               .domain(Object.values(mortvals_up))
-                              .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
+                              .range(['#dfdfc1', '#e6b3b3', '#e36066', '#9f0d0e','#4a0101' ]);
 
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> 9177a7343a5d6eb3045d86b7d382ca621741e62a
         cLeg = d3.select("svg#colorLegend")
         cLeg.selectAll("rect").remove();
         cLeg.selectAll("g").remove()
