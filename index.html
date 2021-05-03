@@ -23,13 +23,13 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: darkgrey;
+      background-color: #d0d5d6;
 
     }
 
     text.projtitle {
       font-family:sans-serif;
-      color: white;
+      color: #4a0101;
     }
 
     .active {
@@ -39,6 +39,44 @@
     svg {
       display: block;
     }
+
+    #graphs {
+      display: flex;
+      flex-direction: row;
+    }
+
+    #button-bar{
+      display: flex;
+      flex-direction: row;
+    }
+
+    button{
+      height: 50px;
+      margin-left: 10px;
+      margin-right: 10px;
+      margin-bottom: 20px;
+      width: 100%;
+      fill: #d0d5d6;
+      border: solid;
+      border-radius: 0.5px;
+      border-color: #4a0101;
+    }
+
+    #titles{
+      display: flex;
+      flex-direction: row;
+    }
+
+    #titles p{
+      width: 50%;
+      margin-left: 15%;
+      font-family: sans-serif;
+    }
+    #colorLegend{
+      margin-bottom: 10px
+    }
+
+
 
     .gridlines line {
       stroke: #bbb;
@@ -60,6 +98,8 @@
 
 
 
+
+
   </style>
 
 
@@ -67,13 +107,31 @@
 <body>
   <div class = "projtitle"> <text class = "projtitle"> Visualizing Maternal Mortality </text> </div>
 
-  <p>Maternal mortality rate is the number of deaths caused (or influenced by) complications due to pregnancy or childbirth out of every 100,000 pregnancies. These deaths are largely preventable. According to the CDC, 60% of deaths in the USA caused by pregnancy or birth complications would be preventable with adequate training and resources. It is estimated that a much larger portion of Maternal mortality are preventable worldwide.</p>
+  <p>The Maternal mortality ratio is the number of deaths caused (or influenced by) complications due to
+    pregnancy or childbirth out of every 100,000 pregnancies. These deaths are largely preventable. According
+     to the CDC, 60% of deaths in the USA caused by pregnancy or birth complications would be preventable with
+     adequate training and resources. It is estimated that a much larger portion of Maternal mortality are
+     preventable worldwide.</p>
 
+  <p> Maternal mortality rates are strongly associated with a country's infant mortality rate (calcualted as
+    the probability of dying between birth and exactly 1 year of age, expressed per 1,000 live births), the
+    percentage of mothers who receive postnatal care within 2 days of giving birth, early childbearing rates
+    (the percentage of women in a country who gave birth before age 18), the proporation of health care facilities
+    with basic sanitaiton services, as well as the percentage of childbirths attended by skilled professional health
+    personnel. Click on a country to view more details about these indicators of maternal mortality. </p>
+
+  <p> Filter maternal mortality rates by country income: </p>
   <div id="button-bar"></div>
-  <svg id="choropleth" height="620" width="1150" style="margin:20px" />
-  <svg id="colorLegend" height="100" width="600" style="background: #fff; margin-top:30px" ></svg>
-  <svg id="graph" height="500" width="800" >
-  </svg>
+  <div id = "titles">
+    <p> Maternal Mortality Ratio, (maternal deaths per 100,000 live births) </p>
+    <p> Countries with Highest Maternal Mortality Ratio </p>
+  </div>
+  <div id = "graphs">
+  <svg class = "graphs" id="choropleth" height="620" width="1000" />
+  <svg class = "graphs"id="graph" height="620" width="800" ></svg>
+</div>
+
+<svg class = "labels" id="colorLegend" height="95" width="600" style="background: #fff; "  ></svg>
 
   <script>
 
@@ -129,11 +187,12 @@
 //ADD data to topojson file:
     data = unicefData.filter( (d) => {return d['TimePeriod'] === "2017";}  );
 
+    let country_data = []
     var mortvals = {}
     for (i = 0; i < countryData.objects.countries.geometries.length; i++) {
       country = countryData.objects.countries.geometries[i].properties.name
       if (unicefCountries.includes(country)){
-
+        country_data.push(country)
         filtered_data = data.filter( (d) => {return d['GeographicArea'] == country;}  )
         var TimePeriod = filtered_data["TimePeriod"]
         var maternal_mortality_ratio = filtered_data[0]["maternal_mortality_ratio"]
@@ -213,7 +272,7 @@
         for (j = 0; j < data.length; j ++){
           ratio = parseInt(data[j]["maternal_mortality_ratio"])
           country = data[j]["GeographicArea"]
-          if ((ratio > maxiRatio) & (top_countries.includes(country) == false)) {maxiRatio = ratio; topiCountry = country;}
+          if ((ratio > maxiRatio) & (top_countries.includes(country) == false & country_data.includes(country))) {maxiRatio = ratio; topiCountry = country;}
         }
         top_ratios.push(maxiRatio)
         top_countries.push(topiCountry)
@@ -311,7 +370,7 @@
 
       chartArea.selectAll('rect.bar').data( top10Data )
               .join('rect').attr('class','bar')
-              .attr("fill", '#6592bf')
+              .attr("fill", '#e36066')
               .attr("x", d => countryScale(d.GeographicArea))
               .attr("y", d => ratioScale(d.maternal_mortality_ratio))
               .attr("height", d => ratioScale(0) - ratioScale(d.maternal_mortality_ratio))
@@ -338,7 +397,7 @@
       const svgc = d3.select("#choropleth");
       const widthm = svgc.attr("width");
       const heightm = svgc.attr("height");
-      const marginm = { top: 20, right: 320, bottom: 20, left:20};
+      const marginm = { top: 20, right: 10, bottom: 0, left:50};
       const mapWidth = widthm - marginm.left - marginm.right;
       const mapHeight = heightm - marginm.top - marginm.bottom;
       const map = svgc.append("g")
@@ -359,7 +418,7 @@
 
       const colorScale = d3.scaleQuantile()
                               .domain(Object.values(mortvals))
-                              .range(['#dfdfc1', '#e6b3b3', '#e36066', '#9f0d0e','#4a0101' ]);
+                              .range(['#fbe0e0', '#e6b3b3', '#e36066', '#9f0d0e','#4a0101' ]);
 
       drawLegend(d3.select("#colorLegend"), colorScale);
 
@@ -383,7 +442,7 @@
 
 
       const mouseover = svgc.append("g").attr("class","mouseover")
-                                       .attr("transform",`translate(${mapWidth},${175})`);
+                                       .attr("transform",`translate(${30},${400})`);
 
       function stringLen(str) {
           const dummytext = mouseover.append("text").attr("class","legendtext").attr("visibility","hidden");
@@ -402,7 +461,7 @@
 
 
         function clicked() {
-          updateMap("All Countries")
+
 
           d3.select(this)
             .classed("clicked", true)
@@ -427,12 +486,25 @@
           if(countryInfo.length != 0){
               let countryName = `Country: ${countryname}`;
               let year = `Year: ${countryInfo[0]['TimePeriod']}`;
-              let mmr = `Maternal Mortality Ratio: ${countryInfo[0]['maternal_mortality_ratio']}`;
-              let imr = `Infant Mortality Rate: ${format(countryInfo[0]['infant_mortality_rate'])}`;
-              let postnatalCare = `% Mothers Postnatal Care: ${d3.format(".0%")(countryInfo[0]['postnatal_care_mothers']/100)}`;
-              let ecb = `Early Childbearing: ${countryInfo[0]['early_childbearing']}`;
-              let pss = `Proportion Sanitation Services: ${d3.format(".0%")(countryInfo[0]['proportion_sanitation_services']/100)}`;
-              let sba = `Skilled Birth Attendant: ${d3.format(".0%")(countryInfo[0]['skilled_birth_attendant']/100)}`;
+              if(countryInfo[0]['maternal_mortality_ratio'] == "") {
+                mmr = `Maternal Mortality Ratio: NA`;}
+              else{
+                mmr = `Maternal Mortality Ratio: ${countryInfo[0]['maternal_mortality_ratio']}`;}
+
+              if (countryInfo[0]['infant_mortality_rate'] == ""){  imr = `Infant Mortality Rate: NA`}
+              else { imr = `Infant Mortality Rate: ${format(countryInfo[0]['infant_mortality_rate'])}`;}
+
+              if(countryInfo[0]['postnatal_care_mothers'] == ""){  postnatalCare = `% Mothers Postnatal Care: NA`}
+              else {postnatalCare = `% Mothers Postnatal Care: ${d3.format(".0%")(countryInfo[0]['postnatal_care_mothers']/100)}`;}
+
+              if(countryInfo[0]['early_childbearing'] == ""){  ecb = `Early Childbearing: NA`}
+              else { ecb = `Early Childbearing: ${countryInfo[0]['early_childbearing']}`;}
+
+              if(countryInfo[0]['proportion_sanitation_services'] == ""){ pss = `Proportion Sanitation Services: NA`}
+              else { pss = `Proportion Sanitation Services: ${d3.format(".0%")(countryInfo[0]['proportion_sanitation_services']/100)}`;}
+
+              if(countryInfo[0]['skilled_birth_attendant'] == ""){ sba = `Skilled Birth Attendant: NA`}
+              else { sba = `Skilled Birth Attendant: ${d3.format(".0%")(countryInfo[0]['skilled_birth_attendant']/100)}`;}
 
               let maxWidth = Math.max( stringLen(countryName), stringLen(year), stringLen(mmr), stringLen(imr), stringLen(postnatalCare), stringLen(ecb), stringLen(pss), stringLen(sba) )
               frame.attr("width", maxWidth+20);
@@ -444,10 +516,10 @@
                     .attr("x", 0).attr("y", 50);
               textbox.append("text").text(imr)
                     .attr("x", 0).attr("y", 70);
-              //textbox.append("text").text(postnatalCare)
-                    //.attr("x", 0).attr("y", 90);
-              //textbox.append("text").text(ecb)
-                    //.attr("x", 0).attr("y", 110);
+              textbox.append("text").text(postnatalCare)
+                    .attr("x", 0).attr("y", 90);
+              textbox.append("text").text(ecb)
+                    .attr("x", 0).attr("y", 110);
               textbox.append("text").text(pss)
                     .attr("x", 0).attr("y", 130);
               textbox.append("text").text(sba)
@@ -597,13 +669,10 @@
 
           const colorScalenew = d3.scaleQuantile()
                               .domain(Object.values(mortvals_up))
-                              .range(['#dfdfc1', '#e6b3b3', '#e36066', '#9f0d0e','#4a0101' ]);
+                              .range(['#fbe0e0', '#e6b3b3', '#e36066', '#9f0d0e','#4a0101' ]);
 
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 9177a7343a5d6eb3045d86b7d382ca621741e62a
         cLeg = d3.select("svg#colorLegend")
         cLeg.selectAll("rect").remove();
         cLeg.selectAll("g").remove()
@@ -665,7 +734,8 @@
             .attr("transform","translate("+(20)+","+(barHeight+5)+")")
             .call(barAxis);
           // Draw rects of color down the bar
-          let bar = legend.append("g").attr("transform","translate("+(20)+","+(0)+")")
+          let bar = legend.append("g")
+          .attr("transform","translate("+(20)+","+(0)+")")
           for (let i=0; i<legendWidth-40; i=i+stepSize) {
             bar.append("rect")
               .attr("x", i)
