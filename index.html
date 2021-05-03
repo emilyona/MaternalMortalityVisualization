@@ -40,6 +40,26 @@
       display: block;
     }
 
+    .gridlines line {
+      stroke: #bbb;
+    }
+
+    g.mouseover rect {
+      fill: white;
+      stroke: #222;
+      stroke-width: 1px;
+    }
+    g.mouseover text {
+      font-family: Arial, sans-serif;
+    }
+    g.mouseover text:first-child {
+      font-weight: bold;
+    }
+
+
+
+
+
   </style>
 
 
@@ -48,7 +68,7 @@
   <div class = "projtitle"> <text class = "projtitle"> Visualizing Maternal Mortality </text> </div>
 
   <div id="button-bar"></div>
-  <svg id="choropleth" height="620" width="800" style="margin:20px" />
+  <svg id="choropleth" height="620" width="1150" style="margin:20px" />
   <svg id="colorLegend" height="100" width="600" style="background: #fff; margin-top:30px" ></svg>
   <svg id="graph" height="500" width="800" >
   </svg>
@@ -62,7 +82,8 @@
     const unicefData = await d3.csv("unicef_final.csv");
     const countryData = await d3.json("countries-110m.json");
     const incomeData = await d3.csv("incomegroups_final.csv");
-    let incomeKey = "All Countries"
+    var incomeKey
+
 
 
 
@@ -170,7 +191,7 @@
     const width = svg.attr("width");
     const height = svg.attr("height");
 
-    const margin = {top: 10, right: 10, bottom: 50, left: 50};
+    const margin = {top: 20, right: 10, bottom: 50, left: 50};
     const chartWidth = width - margin.left - margin.right;
     const chartHeight = height - margin.top - margin.bottom;
 
@@ -231,6 +252,8 @@
                           .tickSize(-chartWidth-10)
                           .tickFormat("");
 
+
+
     annotations.append("g")
                 .attr("class", "y axis")
                 .attr("transform",`translate(${margin.left-10},${margin.top})`)
@@ -239,24 +262,17 @@
                .attr("class", "y gridlines")
                .attr("transform",`translate(${margin.left-10},${margin.top})`)
                .call(leftGridlines);
+    chartArea.append("text")
+              .attr("class", "barlabels")
+              .text("")
 
-    // let bottomAxis = d3.axisBottom(countryScale);
-    // annotations.append("g")
-    //           .attr("class", "x axis")
-    //           .attr("transform",`translate(${margin.left},${chartHeight+margin.top+10})`)
-    //           .call(bottomAxis);
+
     let bottomAxis = d3.axisBottom()
     let bottomAxisG = annotations.append("g")
                                   .attr("class", "x axis")
                                   .attr("transform", `translate(${margin.left},${chartHeight+margin.top+10})`)
 
-    // chartArea.selectAll('rect.bar').data( data )
-    //         .join('rect').attr('class','bar')
-    //         .attr("fill", "steelblue")
-    //         .attr("x", d => countryScale(d.GeographicArea))
-    //         .attr("y", d => ratioScale(d.maternal_mortality_ratio))
-    //         .attr("height", d => ratioScale(0) - ratioScale(d.maternal_mortality_ratio))
-    //         .attr("width", countryScale.bandwidth());
+
 
     const allIncomes = ["Low income", "Lower middle income", "Upper middle income", "High income", "All Countries"]
     allIncomes.forEach(d => {
@@ -269,19 +285,25 @@
           updateMap(d);
         })
     })
-    function updateBars() {
+    function updateBars(incomeKey) {
       if (incomeKey == "All Countries"){
         var updatedData = data
       }
       else {
         var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
       }
+      chartArea.selectAll('text.barlabels')
+              .text("")
+
       top10Data = getTop10Data(updatedData)
+
 
       var countries = getTop10(updatedData)["topcountries"]
       const countryScale = d3.scaleBand().domain(countries)
                                         .range([0, chartWidth])
                                         .padding(0.05);
+
+
       bottomAxis.scale(countryScale)
       bottomAxisG.call(bottomAxis);
 
@@ -294,6 +316,16 @@
               .attr("width", countryScale.bandwidth())
               .attr("country", d => d["GeographicArea"]);
 
+      top10Data.forEach((d, i) => {
+        chartArea.append("text")
+                  .attr("class", "barlabels")
+                  .attr("text-anchor", "start")
+                  .attr("font-size", "15px")
+                  .attr("x", countryScale(d.GeographicArea) + countryScale.bandwidth()/4)
+                  .attr("y", ratioScale( d['maternal_mortality_ratio'] ) - 10)
+                  .text(d.maternal_mortality_ratio)
+      })
+
 
   };
 
@@ -304,7 +336,7 @@
       const svgc = d3.select("#choropleth");
       const widthm = svgc.attr("width");
       const heightm = svgc.attr("height");
-      const marginm = { top: 20, right: 20, bottom: 20, left:20};
+      const marginm = { top: 20, right: 320, bottom: 20, left:20};
       const mapWidth = widthm - marginm.left - marginm.right;
       const mapHeight = heightm - marginm.top - marginm.bottom;
       const map = svgc.append("g")
@@ -329,7 +361,12 @@
 
       drawLegend(d3.select("#colorLegend"), colorScale);
 
-
+      function mapColors(d){
+        if (mortvals[d.properties.name] == undefined){
+          return('#d0d5d6')
+        }
+        else{ return colorScale(mortvals[d.properties.name])}
+      }
 
       map.selectAll("path.countries").data(countries.features)
                                       .join("path")
@@ -337,44 +374,97 @@
                                       .attr("note", d=>d.id)
                                       .attr("d", path)
                                       .on("click", clicked)
-                                      .style("fill", d=>colorScale(mortvals[d.properties.name]))
+                                      .style("fill", d=>mapColors(d))
       map.append("path").datum(countryMesh)
                         .attr("class", "outlineCount")
                         .attr("d", path);
 
 
+      const mouseover = svgc.append("g").attr("class","mouseover")
+                                       .attr("transform",`translate(${mapWidth},${175})`);
 
+      function stringLen(str) {
+          const dummytext = mouseover.append("text").attr("class","legendtext").attr("visibility","hidden");
+          dummytext.text(str)
+          let len = dummytext.node().getComputedTextLength()
+          dummytext.remove()
+          return len;
+        }
+
+        const frame = mouseover.append("rect").attr("class","frame")
+                                 .attr("x", 0).attr("y", 0)
+                                 .attr("rx", 5).attr("ry", 5)  // rx and ry round corners
+                                 .attr("height", 170);  // set width later
+        const textbox = mouseover.append("g").attr("transform","translate(10,10)");
+        const format = d3.format(',d');
+
+
+<<<<<<< HEAD
   //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
         function clicked() {
           updateMap("All Countries")
+=======
+        function clicked(d) {
+>>>>>>> 941025755ba48c777d9fa95c3955dc358a30e088
 
           d3.select(this)
             .classed("clicked", true)
-            .style("fill", "#37c3d6")
+
+          textbox.html('');
+          country = d3.select(this)
 
 
+
+          let id = country.datum().id;
+          let countryname = idToCountry[ id ]
+          let countryInfo = data.filter( (d) => {return d['GeographicArea'] == countryname;}  )
+
+
+          if(countryInfo.length != 0){
+              let countryName = `Country: ${countryname}`;
+              let year = `Year: ${countryInfo[0]['TimePeriod']}`;
+              let mmr = `Maternal Mortality Ratio: ${countryInfo[0]['maternal_mortality_ratio']}`;
+              let imr = `Infannt Mortality Rate: ${format(countryInfo[0]['infant_mortality_rate'])}`;
+              let postnatalCare = `% Mothers Postnatal Care: ${d3.format(".0%")(countryInfo[0]['postnatal_care_mothers']/100)}`;
+              let ecb = `Early Childbearing: ${countryInfo[0]['early_childbearing']}`;
+              let pss = `Proportion Sanitation Services: ${d3.format(".0%")(countryInfo[0]['proportion_sanitation_services']/100)}`;
+              let sba = `Skilled Birth Attendant: ${d3.format(".0%")(countryInfo[0]['skilled_birth_attendant']/100)}`;
+
+              let maxWidth = Math.max( stringLen(countryName), stringLen(year), stringLen(mmr), stringLen(imr), stringLen(postnatalCare), stringLen(ecb), stringLen(pss), stringLen(sba) )
+              frame.attr("width", maxWidth+20);
+              textbox.append("text").text(countryName)
+                      .attr("x", 0).attr("y", 10);
+              textbox.append("text").text(year)
+                    .attr("x", 0).attr("y", 30);
+              textbox.append("text").text(mmr)
+                    .attr("x", 0).attr("y", 50);
+              textbox.append("text").text(imr)
+                    .attr("x", 0).attr("y", 70);
+              textbox.append("text").text(postnatalCare)
+                    .attr("x", 0).attr("y", 90);
+              textbox.append("text").text(ecb)
+                    .attr("x", 0).attr("y", 110);
+              textbox.append("text").text(pss)
+                    .attr("x", 0).attr("y", 130);
+              textbox.append("text").text(sba)
+                    .attr("x", 0).attr("y", 150);
+
+              f = mouseover.select("rect")
+              f.style("stroke", "black")
+
+              tooltip.style("visibility","hidden");
+              textbox.raise()
+
+
+          }
+          if(countryInfo.length == 0){
+            textbox.style("visibility","visible")
+            f = mouseover.select("rect")
+            f.style("stroke", "white")
+          }
         }
 
-        // .on("click", function(){
-        //   console.log("dude")
-        //
-        //   clicked()
-        //           console.log("whatdup")
-        //         })
-        // .on("click", function() {
-        //         d3.select(this)
-        //           .classed("clicked", true)
-        //           .attr("fill", #d24c2e);
-        // })
-      // function clicked(d) {
-      //   console.log("hi")
-      //
-      //   // d3.select(this)
-      //   //   .style("fill", "#37c3d6")
-      //   map.selectAll("path")
-      //     .classed("active")
-      //
-      // }
+
 
         //Tool tip:
         let tooltipWidth = 170;
@@ -428,36 +518,28 @@
           let id = country.datum().id;
           let countryname = idToCountry[ id ]
           let countryInfo = data.filter( (d) => {return d['GeographicArea'] == countryname;}  )
-
-          var liveCountries = allCountry
-          if(incomeKey == "Low income") {liveCountries = lowCountry}
-          if(incomeKey == "Lower middle income"){liveCountries = lowmidCountry}
-          if(incomeKey == "Upper middle income"){liveCountries = upmidCountry}
-          if(incomeKey == "High income"){liveCountries = highCountry}
+          if(countryInfo.length != 0){
 
 
-          console.log(liveCountries)
-          if(liveCountries.includes(countryname) || incomeKey == "All Countries"){
             tooltip.style("visibility","visible")
-          }
+            country.attr("stroke","black")
+                  .attr("stroke-width", 3);
 
 
-          country.attr("stroke","black")
-               .attr("stroke-width", 3);
-          // var mo = topojson.mesh(countryData, countryData.objects.countries, function(a, b) { return a.id === id || b.id === id; });
-          // console.log(mo)
-          //momesh.datum(mo).attr("d", path);
+            txt.text(idToCountry[ id ]);
 
-          txt.text(idToCountry[ id ]);
-          txt2.text(countryInfo[0]["maternal_mortality_ratio"]);
+            txt2.text(countryInfo[0]["maternal_mortality_ratio"]);
 
-          let centroid = path.centroid( country.datum() );
-          let bounds = path.bounds( country.datum() );
-          let xPos = (bounds[0][0]+bounds[1][0])/2.0;
-          let yPos = bounds[1][1];
-          tooltip.attr("transform",`translate(${xPos},${yPos})`);
+            let centroid = path.centroid( country.datum() );
+            let bounds = path.bounds( country.datum() );
+            let xPos = (bounds[0][0]+bounds[1][0])/2.0;
+            let yPos = bounds[1][1];
+            tooltip.attr("transform",`translate(${xPos},${yPos})`);}
 
-          tooltip.raise()
+            country.raise()
+
+            tooltip.raise()
+
 
 
         }
@@ -467,33 +549,63 @@
          tooltip.style("visibility","hidden");
 
          let country = d3.select(this);
-         country.attr("stroke","none")
-              .attr("stroke-width", 0);
-         //momesh.attr("d", "");
+         country.attr("stroke","white")
+              .attr("stroke-width", 0.5);
+
+        textbox.raise()
+
+
 
           }
-          console.log(countries)
+
 
 
         function updateMap(incomeKey) {
+          textbox.html('');
+          f = mouseover.select("rect")
+          f.style("stroke", "white")
+
+          var liveCountries
           if (incomeKey == "All Countries"){
             var updatedData = data
             mortvals_up = mortvals
+            liveCountries = allCountry
           }
           else {
             var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
-            if(incomeKey == "Low income") {mortvals_up = low}
-            if(incomeKey == "Lower middle income"){mortvals_up = lowmid}
-            if(incomeKey == "Upper middle income"){mortvals_up = upmid}
-            if(incomeKey == "High income"){mortvals_up = high}
+            if(incomeKey == "Low income") {
+              mortvals_up = low
+              liveCountries = lowCountry}
+            if(incomeKey == "Lower middle income"){
+              mortvals_up = lowmid
+              liveCountries = lowmidCountry}
+            if(incomeKey == "Upper middle income"){
+              mortvals_up = upmid
+              liveCountries = upmidCountry}
+            if(incomeKey == "High income"){
+              mortvals_up = high
+              liveCountries = highCountry}
 
           }
-          console.log(countries)
+
+
+
 
           const colorScalenew = d3.scaleQuantile()
                               .domain(Object.values(mortvals_up))
                               .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
 
+      
+        cLeg = d3.select("svg#colorLegend")
+        cLeg.selectAll("rect").remove();
+        cLeg.selectAll("g").remove()
+        drawLegend(d3.select("#colorLegend"), colorScalenew);
+
+          function color(d){
+            if(liveCountries.includes(d.properties.name)){
+              return colorScalenew(mortvals_up[d.properties.name])}
+            return("#d0d5d6")
+          }
 
           map.selectAll("path.countries").data(countries.features)
                                               .join("path")
@@ -501,7 +613,7 @@
                                               .attr("note", d=>d.id)
                                               .attr("d", path)
                                               .on("click", clicked)
-                                              .style("fill", d=>colorScalenew(mortvals_up[d.properties.name]))
+                                              .style("fill", d=> color(d))
         map.append("path").datum(countryMesh)
                           .attr("class", "outlineCount")
                           .attr("d", path);
