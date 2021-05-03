@@ -79,7 +79,7 @@
 
   const requestData = async () => {
 
-    const unicefData = await d3.csv("unicef_final.csv");
+    const unicefData = await d3.csv("unicef_FinalData.csv");
     const countryData = await d3.json("countries-110m.json");
     const incomeData = await d3.csv("incomegroups_final.csv");
     var incomeKey
@@ -589,7 +589,7 @@
                               .domain(Object.values(mortvals_up))
                               .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
 
-      
+
         cLeg = d3.select("svg#colorLegend")
         cLeg.selectAll("rect").remove();
         cLeg.selectAll("g").remove()
