@@ -40,6 +40,14 @@
       display: block;
     }
 
+    .gridlines line {
+      stroke: #bbb;
+    }
+
+
+
+
+
   </style>
 
 
@@ -171,7 +179,7 @@
     const width = svg.attr("width");
     const height = svg.attr("height");
 
-    const margin = {top: 10, right: 10, bottom: 50, left: 50};
+    const margin = {top: 20, right: 10, bottom: 50, left: 50};
     const chartWidth = width - margin.left - margin.right;
     const chartHeight = height - margin.top - margin.bottom;
 
@@ -240,24 +248,17 @@
                .attr("class", "y gridlines")
                .attr("transform",`translate(${margin.left-10},${margin.top})`)
                .call(leftGridlines);
+    chartArea.append("text")
+              .attr("class", "barlabels")
+              .text("")
 
-    // let bottomAxis = d3.axisBottom(countryScale);
-    // annotations.append("g")
-    //           .attr("class", "x axis")
-    //           .attr("transform",`translate(${margin.left},${chartHeight+margin.top+10})`)
-    //           .call(bottomAxis);
+
     let bottomAxis = d3.axisBottom()
     let bottomAxisG = annotations.append("g")
                                   .attr("class", "x axis")
                                   .attr("transform", `translate(${margin.left},${chartHeight+margin.top+10})`)
 
-    // chartArea.selectAll('rect.bar').data( data )
-    //         .join('rect').attr('class','bar')
-    //         .attr("fill", "steelblue")
-    //         .attr("x", d => countryScale(d.GeographicArea))
-    //         .attr("y", d => ratioScale(d.maternal_mortality_ratio))
-    //         .attr("height", d => ratioScale(0) - ratioScale(d.maternal_mortality_ratio))
-    //         .attr("width", countryScale.bandwidth());
+
 
     const allIncomes = ["Low income", "Lower middle income", "Upper middle income", "High income", "All Countries"]
     allIncomes.forEach(d => {
@@ -270,14 +271,18 @@
           updateMap(d);
         })
     })
-    function updateBars() {
+    function updateBars(incomeKey) {
       if (incomeKey == "All Countries"){
         var updatedData = data
       }
       else {
         var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
       }
+      chartArea.selectAll('text.barlabels')
+              .text("")
+
       top10Data = getTop10Data(updatedData)
+
 
       var countries = getTop10(updatedData)["topcountries"]
       const countryScale = d3.scaleBand().domain(countries)
@@ -294,6 +299,16 @@
               .attr("height", d => ratioScale(0) - ratioScale(d.maternal_mortality_ratio))
               .attr("width", countryScale.bandwidth())
               .attr("country", d => d["GeographicArea"]);
+
+      top10Data.forEach((d, i) => {
+        chartArea.append("text")
+                  .attr("class", "barlabels")
+                  .attr("text-anchor", "start")
+                  .attr("font-size", "15px")
+                  .attr("x", countryScale(d.GeographicArea) + countryScale.bandwidth()/4)
+                  .attr("y", ratioScale( d['maternal_mortality_ratio'] ) - 10)
+                  .text(d.maternal_mortality_ratio)
+      })
 
 
   };
