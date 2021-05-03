@@ -427,13 +427,12 @@
               let year = `Year: ${countryInfo[0]['TimePeriod']}`;
               let mmr = `Maternal Mortality Ratio: ${countryInfo[0]['maternal_mortality_ratio']}`;
               let imr = `Infant Mortality Rate: ${format(countryInfo[0]['infant_mortality_rate'])}`;
-              //postnatal care doesn't have many countries with the data
-              //let postnatalCare = `% Mothers Postnatal Care: ${d3.format(".0%")(countryInfo[0]['postnatal_care_mothers']/100)}`;
+              let postnatalCare = `% Mothers Postnatal Care: ${d3.format(".0%")(countryInfo[0]['postnatal_care_mothers']/100)}`;
               let ecb = `Early Childbearing: ${countryInfo[0]['early_childbearing']}`;
               let pss = `Proportion Sanitation Services: ${d3.format(".0%")(countryInfo[0]['proportion_sanitation_services']/100)}`;
               let sba = `Skilled Birth Attendant: ${d3.format(".0%")(countryInfo[0]['skilled_birth_attendant']/100)}`;
-              //i deleted  stringLen(postnatalCare)
-              let maxWidth = Math.max( stringLen(countryName), stringLen(year), stringLen(mmr), stringLen(imr), stringLen(ecb), stringLen(pss), stringLen(sba) )
+
+              let maxWidth = Math.max( stringLen(countryName), stringLen(year), stringLen(mmr), stringLen(imr), stringLen(postnatalCare), stringLen(ecb), stringLen(pss), stringLen(sba) )
               frame.attr("width", maxWidth+20);
               textbox.append("text").text(countryName)
                       .attr("x", 0).attr("y", 10);
@@ -443,9 +442,10 @@
                     .attr("x", 0).attr("y", 50);
               textbox.append("text").text(imr)
                     .attr("x", 0).attr("y", 70);
-
-              textbox.append("text").text(ecb)
-                    .attr("x", 0).attr("y", 110);
+              //textbox.append("text").text(postnatalCare)
+                    //.attr("x", 0).attr("y", 90);
+              //textbox.append("text").text(ecb)
+                    //.attr("x", 0).attr("y", 110);
               textbox.append("text").text(pss)
                     .attr("x", 0).attr("y", 130);
               textbox.append("text").text(sba)
