@@ -62,7 +62,8 @@
     const unicefData = await d3.csv("unicef_final.csv");
     const countryData = await d3.json("countries-110m.json");
     const incomeData = await d3.csv("incomegroups_final.csv");
-    let incomeKey = "All Countries"
+    var incomeKey
+
 
 
 
@@ -329,7 +330,12 @@
 
       drawLegend(d3.select("#colorLegend"), colorScale);
 
-
+      function mapColors(d){
+        if (mortvals[d.properties.name] == undefined){
+          return('#d0d5d6')
+        }
+        else{ return colorScale(mortvals[d.properties.name])}
+      }
 
       map.selectAll("path.countries").data(countries.features)
                                       .join("path")
@@ -337,7 +343,7 @@
                                       .attr("note", d=>d.id)
                                       .attr("d", path)
                                       .on("click", clicked)
-                                      .style("fill", d=>colorScale(mortvals[d.properties.name]))
+                                      .style("fill", d=>mapColors(d))
       map.append("path").datum(countryMesh)
                         .attr("class", "outlineCount")
                         .attr("d", path);
@@ -428,36 +434,27 @@
           let id = country.datum().id;
           let countryname = idToCountry[ id ]
           let countryInfo = data.filter( (d) => {return d['GeographicArea'] == countryname;}  )
-
-          var liveCountries = allCountry
-          if(incomeKey == "Low income") {liveCountries = lowCountry}
-          if(incomeKey == "Lower middle income"){liveCountries = lowmidCountry}
-          if(incomeKey == "Upper middle income"){liveCountries = upmidCountry}
-          if(incomeKey == "High income"){liveCountries = highCountry}
+          if(countryInfo.length != 0){
 
 
-          console.log(liveCountries)
-          if(liveCountries.includes(countryname) || incomeKey == "All Countries"){
             tooltip.style("visibility","visible")
-          }
+            country.attr("stroke","black")
+                  .attr("stroke-width", 3);
 
 
-          country.attr("stroke","black")
-               .attr("stroke-width", 3);
-          // var mo = topojson.mesh(countryData, countryData.objects.countries, function(a, b) { return a.id === id || b.id === id; });
-          // console.log(mo)
-          //momesh.datum(mo).attr("d", path);
+            txt.text(idToCountry[ id ]);
 
-          txt.text(idToCountry[ id ]);
-          txt2.text(countryInfo[0]["maternal_mortality_ratio"]);
+            txt2.text(countryInfo[0]["maternal_mortality_ratio"]);
 
-          let centroid = path.centroid( country.datum() );
-          let bounds = path.bounds( country.datum() );
-          let xPos = (bounds[0][0]+bounds[1][0])/2.0;
-          let yPos = bounds[1][1];
-          tooltip.attr("transform",`translate(${xPos},${yPos})`);
+            let centroid = path.centroid( country.datum() );
+            let bounds = path.bounds( country.datum() );
+            let xPos = (bounds[0][0]+bounds[1][0])/2.0;
+            let yPos = bounds[1][1];
+            tooltip.attr("transform",`translate(${xPos},${yPos})`);}
 
-          tooltip.raise()
+            country.raise()
+            tooltip.raise()
+
 
 
         }
@@ -469,31 +466,48 @@
          let country = d3.select(this);
          country.attr("stroke","none")
               .attr("stroke-width", 0);
-         //momesh.attr("d", "");
+
 
           }
-          console.log(countries)
+
 
 
         function updateMap(incomeKey) {
+          var liveCountries
           if (incomeKey == "All Countries"){
             var updatedData = data
             mortvals_up = mortvals
+            liveCountries = allCountry
           }
           else {
             var updatedData = data.filter((d) => {return d['IncomeGroup'] === incomeKey})
-            if(incomeKey == "Low income") {mortvals_up = low}
-            if(incomeKey == "Lower middle income"){mortvals_up = lowmid}
-            if(incomeKey == "Upper middle income"){mortvals_up = upmid}
-            if(incomeKey == "High income"){mortvals_up = high}
+            if(incomeKey == "Low income") {
+              mortvals_up = low
+              liveCountries = lowCountry}
+            if(incomeKey == "Lower middle income"){
+              mortvals_up = lowmid
+              liveCountries = lowmidCountry}
+            if(incomeKey == "Upper middle income"){
+              mortvals_up = upmid
+              liveCountries = upmidCountry}
+            if(incomeKey == "High income"){
+              mortvals_up = high
+              liveCountries = highCountry}
 
           }
+
+
           console.log(countries)
 
           const colorScalenew = d3.scaleQuantile()
                               .domain(Object.values(mortvals_up))
                               .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
 
+          function color(d){
+            if(liveCountries.includes(d.properties.name)){
+              return colorScalenew(mortvals_up[d.properties.name])}
+            return("#d0d5d6")
+          }
 
           map.selectAll("path.countries").data(countries.features)
                                               .join("path")
@@ -501,7 +515,7 @@
                                               .attr("note", d=>d.id)
                                               .attr("d", path)
                                               .on("click", clicked)
-                                              .style("fill", d=>colorScalenew(mortvals_up[d.properties.name]))
+                                              .style("fill", d=> color(d))
         map.append("path").datum(countryMesh)
                           .attr("class", "outlineCount")
                           .attr("d", path);
