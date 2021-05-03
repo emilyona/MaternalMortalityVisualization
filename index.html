@@ -399,13 +399,8 @@
         const format = d3.format(',d');
 
 
-<<<<<<< HEAD
-  //HELP this is what each country will do when clicked upon- it currently turns the whole freaking map blue so that sucks
         function clicked() {
           updateMap("All Countries")
-=======
-        function clicked(d) {
->>>>>>> 941025755ba48c777d9fa95c3955dc358a30e088
 
           d3.select(this)
             .classed("clicked", true)
@@ -595,7 +590,7 @@
                               .domain(Object.values(mortvals_up))
                               .range(['#dfdfc1', '#8bbdcc', '#6592bf', '#3f69af','#00429d' ]);
 
-      
+
         cLeg = d3.select("svg#colorLegend")
         cLeg.selectAll("rect").remove();
         cLeg.selectAll("g").remove()
