@@ -168,7 +168,8 @@
     var lowmid = {}
     var upmid = {}
     var high = {}
-    console.log(incomeData)
+
+
 
     // Add income level to unicef countries data
     for (i = 0; i < unicefData.length; i++) {
@@ -366,7 +367,7 @@
 
 
       var countries = getTop10(updatedData)["topcountries"]
-      console.log(countries)
+      
       const countryScale = d3.scaleBand().domain(countries)
                                         .range([0, chartWidth])
                                         .padding(0.05);
@@ -466,6 +467,7 @@
         const textbox = mouseover.append("g").attr("transform","translate(10,10)");
         const format = d3.format(',d');
 
+        var numClicks = 0;
 
         function clicked() {
 
@@ -488,6 +490,7 @@
           let id = country.datum().id;
           let countryname = idToCountry[ id ]
           let countryInfo = data.filter( (d) => {return d['GeographicArea'] == countryname;}  )
+
 
 
           if(countryInfo.length != 0){
@@ -545,6 +548,7 @@
             f = mouseover.select("rect")
             f.style("stroke", "white")
           }
+
         }
 
 
